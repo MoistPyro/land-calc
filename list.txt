@@ -1,0 +1,96 @@
+1 Kellan, Daring Traveler // Journey On (LCI) 231
+1 Aerial Extortionist (NCC) 11
+1 Aether Vial (IMA) 212
+1 Agatha's Soul Cauldron (PWOE) 242p
+1 Ancient Tomb (UMA) 236
+1 Archivist of Oghma (CLB) 4
+1 Archon of Emeria (ZNR) 4
+1 Archon of Valor's Reach (C20) 202
+1 Arid Mesa (MH2) 244
+1 Armageddon (4ED) 5
+1 Avacyn's Pilgrim (ISD) 170
+1 Aven Mindcensor (AKH) 5
+1 Benevolent Bodyguard (JUD) 5
+1 Birds of Paradise (DMR) 151
+1 Birthing Pod (NPH) 104
+1 Boromir, Warden of the Tower (LTR) 4
+1 Boseiju, Who Endures (NEO) 266
+1 Bountiful Promenade (BBD) 81
+1 Branchloft Pathway // Boulderloft Pathway (ZNR) 258
+1 Brushland (BRO) 259
+1 Chord of Calling (M15) 172
+1 Chrome Mox (EMA) 219
+1 City of Brass (MMA) 221
+1 Collector Ouphe (MH1) 158
+1 Command Tower (ELD) 333
+1 Dauntless Dismantler (LCI) 8
+1 Deafening Silence (ELD) 10
+1 Delighted Halfling (LTR) 158
+1 Drannith Magistrate (IKO) 11
+1 Eidolon of Rhetoric (JOU) 10
+1 Eiganjo, Seat of the Empire (NEO) 268
+1 Eladamri's Call (MH1) 197
+1 Eldritch Evolution (MB1) 1190
+1 Elesh Norn, Grand Cenobite (MM2) 16
+1 Elvish Mystic (CMM) 284
+1 Emeria's Call // Emeria, Shattered Skyclave (ZNR) 12
+1 Endurance (MH2) 157
+1 Enlightened Tutor (DMR) 263
+1 Esper Sentinel (MH2) 12
+1 Ethersworn Canonist (MMA) 14
+1 Exotic Orchard (CM2) 250
+1 Extraction Specialist (SNC) 12
+1 Flooded Strand (KTK) 233
+3 Forest (ELD) 266
+1 Fyndhorn Elves (CMR) 228
+1 Gaea's Cradle (USG) 321
+1 Get Lost (LCI) 14
+1 Giver of Runes (MH1) 13
+1 Glowrider (LGN) 15
+1 Haywire Mite (BRO) 199
+1 Heliod, Sun-Crowned (CMM) 29
+1 Linvala, Keeper of Silence (JMP) 119
+1 Lion Sash (NEO) 26
+1 Llanowar Elves (EMA) 175
+1 Loran of the Third Path (BRO) 12
+1 Mana Confluence (JOU) 163
+1 Mana Crypt (MB1) 1603
+1 Marsh Flats (MH2) 437
+1 Misty Rainforest (MH2) 250
+1 Mother of Runes (ULG) 14
+1 Mox Diamond (STH) 138
+1 Outland Liberator // Frenzied Trapbreaker (MID) 190
+3 Plains (UND) 87
+1 Ranger-Captain of Eos (MH1) 21
+1 Ravages of War (PTK) 17
+1 Recruiter of the Guard (MB1) 206
+1 Sanctum Prelate (CN2) 23
+1 Savannah (3ED) 285
+1 Scavenging Ooze (M21) 204
+1 Serra Ascendant (PAGL) 26
+1 Shalai, Voice of Plenty (WOC) 74
+1 Skyclave Apparition (ZNR) 39
+1 Sol Ring (MB1) 1633
+1 Solitude (MH2) 32
+1 Stoneforge Mystic (2XM) 31
+1 Stony Silence (ISD) 36
+1 Sun Titan (C19) 76
+1 Sword of Fire and Ice (MMA) 216
+1 Sword of Hearth and Home (MH2) 238
+1 Swords to Plowshares (WHO) 212
+1 Sylvan Library (CC1) 5
+1 Sylvan Tutor (LTC) 531
+1 Tadeas, Juniper Ascendant (SLX) 16
+1 Temple Garden (GRN) 258
+1 Thalia, Guardian of Thraben (DKA) 24
+1 Thalia, Heretic Cathar (EMN) 46
+1 Turntimber Symbiosis // Turntimber, Serpentine Wood (ZNR) 215
+1 Urza's Saga (MH2) 259
+1 Verdant Catacombs (MM3) 249
+1 Vivien, Champion of the Wilds (CLB) 838
+1 Walking Ballista (AER) 181
+1 Windswept Heath (KTK) 248
+1 Wooded Foothills (KTK) 249
+1 Worldly Tutor (CC1) 6
+1 Yasharn, Implacable Earth (ZNR) 240
+1 Yavimaya, Cradle of Growth (MH2) 261
