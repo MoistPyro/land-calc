@@ -33,4 +33,9 @@ https://www.channelfireball.com/article/How-Many-Lands-Do-You-Need-in-Your-Deck-
 # TODO
 
 - use bulk data to not require internet?
-- github
+
+# CHANGELOG
+
+## 22.1.2024
+
+initial release!
