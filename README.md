@@ -14,15 +14,33 @@ the program looks up each card individualy, and each request returns between 8-8
 
 # Installation
 
-## build it from source
+## Download (windows only)
 
-1. install cargo (rust pakage manager)
-2. run "build.bat" (windows) or "build.sh" (linux) as admin (windows) or sudo (linux)
+https://drive.google.com/file/d/14TijK5Ahylhzvkt0MRjomdC6v6uQC7kN/view?usp=sharing
 
-## get it from crates.io
+## build it from source (always fresh)
+
+### Windows
+
+1. install cargo (rust pakage manager) and git (source control)
+2. open a terminal in the location you wish to store the source code in
+3. type in: git clone https://github.com/MoistPyro/land-calc.git land-calc
+4. type in: cd land-calc
+4. run "build.bat" as admin
+
+### Linux
+
+1. install cargo and git
+2. run: git clone https://github.com/MoistPyro/land-calc.git land-calc
+3. run: cd land-calc
+4. run: cargo build -r
+
+## get it from crates.io (sometimes outdated)
 
 1. install cargo
-2. in the terminal: cargo install land-calc
+2. create a folder for the code to live in
+3. in the terminal: 'cargo add land-calc' from inside the folder
+4. run build.bat as admin
 
 # errors
 
