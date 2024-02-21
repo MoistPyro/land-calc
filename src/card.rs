@@ -12,6 +12,17 @@ mod tests {
         let json_str: String = read_to_string("test.json").unwrap();
         let _test_result: ResponseList = serde_json::from_str(&json_str).unwrap();
     }
+
+    #[test]
+    fn test_tasigur_colour() {
+        let json_str: String = read_to_string("test.json").unwrap();
+        let response: ResponseList = serde_json::from_str(&json_str).unwrap();
+        let tasigur = response.card_or().unwrap();
+        let tas_colours = &tasigur.colors;
+        let tas_identity = &tasigur.color_identity;
+        assert!(tas_colours.first().unwrap() == &'B');
+        assert!(tas_identity.iter().zip(vec!['B', 'G', 'U']).all(|(a, b)| a == &b));
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Clone)]
@@ -173,6 +184,21 @@ impl CardObject {
 
 #[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
 pub struct URI(String);
+
+pub struct Colours(u8);
+
+impl<'de> Deserialize<'de> for Colours {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        struct ColoursVisitor;
+
+        impl<'de> Visitor<'de> for ColoursVisitor {
+            type Value = Colours;
+        }
+    }
+}
 
 #[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
 pub struct RelatedCardObject {
