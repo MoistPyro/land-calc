@@ -1,4 +1,4 @@
-use card::{CardObject, ResponseList};
+use card::{CardObject, ResponseList, SearchResult};
 use futures::{stream, StreamExt};
 use reqwest::{
     header::{HeaderMap, HeaderValue},
@@ -109,11 +109,10 @@ slint::slint! {
 
 const FILE: &str = "list.txt";
 const CONCURRENT_REQUESTS: usize = 1;
+const TIMEOUT: u64 = 3;
 const SCRYFALL_URL: &str = "https://api.scryfall.com/cards/search";
 const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 const CONNECTION: &str = "keep-alive";
-
-type CardList = Vec<(u32, CardObject)>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -124,7 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let https_client = Client::builder()
         .default_headers(headers)
         .https_only(true)
-        .timeout(Duration::from_secs(1))
+        .timeout(Duration::from_secs(TIMEOUT))
         .build()?;
 
     let list = read_file()?;
@@ -138,35 +137,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut warnings = vec!["warnings:".to_string()];
 
-    let cards: CardList = responses
-        .filter_map(|b| async move {
-            match b {
-                Err(e) => {
-                    eprintln!("Got an error while searching: {}", e);
-                    warnings.push(e.to_string());
-                    None
-                }
-                Ok((a, r)) => match r.card_or() {
-                    Err(e) => {
-                        eprintln!("{}", e);
-                        warnings.push(e.into());
-                        None
-                    }
-                    Ok(card_object) => Some((a, card_object.clone())),
-                },
-            }
+    let search_results: Vec<(u32, SearchResult)> = responses
+        .map(|r| {
+            let temp = r.unwrap();
+            (temp.0, temp.1.card_or())
         })
-        .collect::<CardList>()
+        .collect::<Vec<(u32, SearchResult)>>()
         .await;
 
-    for (i, c) in &cards {
-        println!("{} {}", i, c.name);
-    }
+    let cards: Vec<(u32, CardObject)> = search_results
+        .iter()
+        .filter_map(|(amount, search_result)| match search_result {
+            SearchResult::MultipleHits(_, c) => Some((*amount, c.clone())),
+            SearchResult::OneHit(c) => Some((*amount, c.clone())),
+            SearchResult::NoHits => None,
+        })
+        .collect();
+
+    //TODO: make errors less opaque
+    let mut errors: Vec<String> = search_results
+        .iter()
+        .filter_map(|(_, search_result)| match search_result {
+            SearchResult::MultipleHits(i, _) => Some(format!("found {} cards", i)),
+            SearchResult::OneHit(_) => None,
+            SearchResult::NoHits => Some("No card with that name found".to_string()),
+        })
+        .collect();
+
+    warnings.append(&mut errors);
+    let warning_display: String = warnings.join("\n");
 
     let number_of_spells: usize = cards.iter().filter(|(_, c)| c.is_nonland()).count();
     let lands_func = recommended_lands_static_cards(cards);
 
-    run_app(lands_func, number_of_spells)?;
+    run_app(lands_func, number_of_spells, warning_display)?;
     Ok(())
 }
 
@@ -174,28 +178,19 @@ async fn scryfall_search(
     amount: u32,
     client: &Client,
     query: String,
-) -> Result<(u32, ResponseList), Box<dyn std::error::Error>> {
+) -> Result<(u32, ResponseList), reqwest::Error> {
     let response: Response = client
         .get(SCRYFALL_URL)
         .query(&[("q", &query)])
         .send()
         .await?;
 
-    let status = response.status().as_u16();
-    match status {
-        200 => Ok((amount, response.json::<ResponseList>().await?)),
-        429 => Err("429: too many requests".into()),
-        code => Err(format!(
-            "error while searching {} {}: unknown response from scryfall",
-            query, code
-        )
-        .into()),
-    }
+    return Ok((amount, response.json::<ResponseList>().await?));
 }
 
 fn recommended_lands(
     total_cards: u32,
-    list: &CardList,
+    list: &Vec<(u32, CardObject)>,
     ramp: u32,
     draw: u32,
     cmdr_cmp: u32,
@@ -210,7 +205,7 @@ fn recommended_lands(
         - 0.28 * (ramp + draw) as f64
 }
 
-fn recommended_lands_static_cards(list: CardList) -> impl Fn(u32, u32, u32, u32) -> f64 {
+fn recommended_lands_static_cards<'a>(list: Vec<(u32, CardObject)>) -> impl Fn(u32, u32, u32, u32) -> f64 + 'a {
     move |total_cards: u32, ramp: u32, draw: u32, cmdr_cmp: u32| {
         recommended_lands(total_cards, &list, ramp, draw, cmdr_cmp)
     }
@@ -224,7 +219,7 @@ fn parse_shared_string_u32(s: SharedString) -> u32 {
     }
 }
 
-fn run_app<F>(f: F, spells: usize) -> Result<(), slint::PlatformError>
+fn run_app<F>(f: F, spells: usize, errors: String) -> Result<(), slint::PlatformError>
 where
     F: Fn(u32, u32, u32, u32) -> f64 + 'static,
 {
@@ -239,7 +234,7 @@ where
         )
         .into(),
     );
-    ui_handle.set_errors("Errors:\n".into());
+    ui_handle.set_errors(errors.into());
     ui_handle.set_answer("tries to read 'list.txt'".into());
 
     ui.on_do_the_thing(move || {

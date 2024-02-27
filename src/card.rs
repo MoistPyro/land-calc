@@ -1,6 +1,6 @@
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Deserializer, Serialize};
 use serde_json::Number;
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, fmt};
 use uuid::Uuid;
 
 #[cfg(test)]
@@ -8,6 +8,7 @@ mod tests {
     use super::*;
     use std::fs::read_to_string;
     #[test]
+    #[should_panic]
     fn test_ser_de() {
         let json_str: String = read_to_string("test.json").unwrap();
         let parsed_json: ResponseList = serde_json::from_str(&json_str).unwrap();
@@ -19,7 +20,8 @@ mod tests {
     fn test_tasigur_colour() {
         let json_str: String = read_to_string("test.json").unwrap();
         let response: ResponseList = serde_json::from_str(&json_str).unwrap();
-        let tasigur = response.card_or().unwrap();
+        let search_result = response.card_or();
+        let tasigur = search_result.get_card_ref().unwrap();
         let tas_colours = &tasigur.colors;
         let tas_identity = &tasigur.color_identity;
         assert!(tas_colours.0 == 0b00000100);
@@ -336,56 +338,34 @@ pub struct ResponseList {
 }
 
 impl ResponseList {
-    pub fn card_or<'a>(&'a self) -> Result<&'a CardObject, SearchError> {
-        let c = self.data.first().ok_or(SearchError::NoHits)?;
+    pub fn card_or<'a>(&'a self) -> SearchResult {
+        let c = self.data.first();
 
-        if self.total_cards > 1 {
-            return Err(SearchError::MultipleHits(
-                self.total_cards,
-                c.name.to_owned(),
-            ));
+        if let Some(card_object) = c {
+            if self.total_cards > 1 {
+                return SearchResult::MultipleHits(self.total_cards, card_object.clone());
+            };
+
+            return SearchResult::OneHit(card_object.clone());
         };
-        return Ok(c);
+
+        return SearchResult::NoHits;
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum SearchError {
-    MultipleHits(u32, String),
+pub enum SearchResult {
+    MultipleHits(u32, CardObject),
+    OneHit(CardObject),
     NoHits,
-    Other(String),
 }
 
-impl From<&str> for SearchError {
-    fn from(value: &str) -> Self {
-        Self::Other(value.to_string())
-    }
-}
-
-impl From<String> for SearchError {
-    fn from(value: String) -> Self {
-        Self::Other(value)
-    }
-}
-
-impl fmt::Display for SearchError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl SearchResult {
+    fn get_card_ref<'a>(&'a self) -> Option<&'a CardObject> {
         match self {
-            SearchError::MultipleHits(i, s) => write!(f, "found {} cards, did you meen {}?", i, s),
-            SearchError::NoHits => write!(f, "no results found"),
-            SearchError::Other(s) => write!(f, "{}", s),
+            Self::MultipleHits(_, card) => Some(card),
+            Self::OneHit(card) => Some(card),
+            Self::NoHits => None,
         }
     }
 }
-
-impl From<SearchError> for String {
-    fn from(value: SearchError) -> Self {
-        match value {
-            SearchError::MultipleHits(i, s) => format!("found {} cards, did you meen {}?", i, s),
-            SearchError::NoHits => format!("no results found"),
-            SearchError::Other(s) => format!("{}", s),
-        }
-    }
-}
-
-impl Error for SearchError {}
