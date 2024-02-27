@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Deserializer, Serialize};
 use serde_json::Number;
 use std::{collections::HashMap, error::Error, fmt};
 use uuid::Uuid;
@@ -8,9 +8,11 @@ mod tests {
     use super::*;
     use std::fs::read_to_string;
     #[test]
-    fn test_test_json() {
+    fn test_ser_de() {
         let json_str: String = read_to_string("test.json").unwrap();
-        let _test_result: ResponseList = serde_json::from_str(&json_str).unwrap();
+        let parsed_json: ResponseList = serde_json::from_str(&json_str).unwrap();
+        let test_result: String = serde_json::to_string(&parsed_json).unwrap();
+        assert_eq!(json_str, test_result);
     }
 
     #[test]
@@ -20,8 +22,8 @@ mod tests {
         let tasigur = response.card_or().unwrap();
         let tas_colours = &tasigur.colors;
         let tas_identity = &tasigur.color_identity;
-        assert!(tas_colours.first().unwrap() == &'B');
-        assert!(tas_identity.iter().zip(vec!['B', 'G', 'U']).all(|(a, b)| a == &b));
+        assert!(tas_colours.0 == 0b00000100);
+        assert!(tas_identity.0 == 0b00001101);
     }
 }
 
@@ -56,11 +58,11 @@ pub struct CardObject {
     #[serde(default)]
     pub card_faces: Vec<CardFace>,
     pub cmc: Number,
-    pub color_identity: Vec<char>,
+    pub color_identity: Colours,
     #[serde(default)]
     pub color_indicator: Vec<char>,
     #[serde(default)]
-    pub colors: Vec<char>,
+    pub colors: Colours,
     #[serde(default)]
     pub defence: Option<String>,
     #[serde(default)]
@@ -164,7 +166,7 @@ pub struct CardObject {
 
 impl CardObject {
     pub fn is_nonland(&self) -> bool {
-        let has_colour: bool = self.colors.len() > 0;
+        let has_colour: bool = self.colors.0 > 0;
         let back_side_has_colour: bool = match self.card_faces.last() {
             Some(face) => face.colors.len() > 0,
             None => false,
@@ -185,18 +187,86 @@ impl CardObject {
 #[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
 pub struct URI(String);
 
+#[derive(Debug, PartialEq, PartialOrd, Default, Clone)]
+///000WUBRG
 pub struct Colours(u8);
 
 impl<'de> Deserialize<'de> for Colours {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
-        struct ColoursVisitor;
+        deserializer.deserialize_seq(ColoursVisitor::new())
+    }
+}
 
-        impl<'de> Visitor<'de> for ColoursVisitor {
-            type Value = Colours;
+impl From<u8> for Colours {
+    fn from(value: u8) -> Self {
+        Colours(value)
+    }
+}
+
+impl Serialize for Colours {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut length = 0;
+        let mut temp_vec: Vec<char> = vec![];
+        let names = ['G', 'R', 'B', 'U', 'W'];
+        for (i, c) in names.iter().enumerate() {
+            if self.0 & (1 << i) > 0 {
+                length += 1;
+                temp_vec.push(*c);
+            }
         }
+        let mut seq = serializer.serialize_seq(Some(length))?;
+
+        for e in temp_vec {
+            seq.serialize_element(&e)?;
+        }
+        seq.end()
+    }
+}
+
+struct ColoursVisitor;
+
+impl<'de> Visitor<'de> for ColoursVisitor {
+    type Value = Colours;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a list of mtg colours")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        {
+            let mut r: Vec<char> = vec![];
+            while let Some(value) = seq.next_element()? {
+                r.push(value)
+            }
+            let mut c: u8 = 0b00000000;
+
+            for letter in r {
+                c = match letter {
+                    'W' => c | 0b00010000,
+                    'U' => c | 0b00001000,
+                    'B' => c | 0b00000100,
+                    'R' => c | 0b00000010,
+                    'G' => c | 0b00000001,
+                    _ => c,
+                };
+            }
+            Ok(c.into())
+        }
+    }
+}
+
+impl ColoursVisitor {
+    fn new() -> Self {
+        Self
     }
 }
 
