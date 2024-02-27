@@ -337,12 +337,9 @@ pub struct ResponseList {
 
 impl ResponseList {
     pub fn card_or<'a>(&'a self) -> Result<&'a CardObject, SearchError> {
-        let c = self
-            .data
-            .first()
-            .ok_or::<SearchError>("no first result".into())?;
+        let c = self.data.first().ok_or(SearchError::NoHits)?;
 
-        if self.total_cards != 1 {
+        if self.total_cards > 1 {
             return Err(SearchError::MultipleHits(
                 self.total_cards,
                 c.name.to_owned(),
@@ -355,6 +352,7 @@ impl ResponseList {
 #[derive(Debug, Clone)]
 pub enum SearchError {
     MultipleHits(u32, String),
+    NoHits,
     Other(String),
 }
 
@@ -374,7 +372,18 @@ impl fmt::Display for SearchError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             SearchError::MultipleHits(i, s) => write!(f, "found {} cards, did you meen {}?", i, s),
+            SearchError::NoHits => write!(f, "no results found"),
             SearchError::Other(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+impl From<SearchError> for String {
+    fn from(value: SearchError) -> Self {
+        match value {
+            SearchError::MultipleHits(i, s) => format!("found {} cards, did you meen {}?", i, s),
+            SearchError::NoHits => format!("no results found"),
+            SearchError::Other(s) => format!("{}", s),
         }
     }
 }

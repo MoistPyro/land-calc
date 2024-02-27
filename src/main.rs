@@ -20,6 +20,7 @@ slint::slint! {
         out property <string> draw;
         in property <string> answer;
         in property <string> info;
+        in-out property <string> errors;
         callback do_the_thing();
         VerticalLayout {
             spacing: 5px;
@@ -29,6 +30,13 @@ slint::slint! {
                 font-size: 14px;
                 horizontal-alignment: center;
                 text: info;
+            }
+
+            Text {
+                font-size: 14px;
+                color: red;
+                horizontal-alignment: center;
+                text: errors;
             }
 
             GroupBox {
@@ -128,16 +136,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .buffer_unordered(CONCURRENT_REQUESTS);
 
+    let mut warnings = vec!["warnings:".to_string()];
+
     let cards: CardList = responses
         .filter_map(|b| async move {
             match b {
                 Err(e) => {
                     eprintln!("Got an error while searching: {}", e);
+                    warnings.push(e.to_string());
                     None
                 }
                 Ok((a, r)) => match r.card_or() {
                     Err(e) => {
-                        eprintln!("Got error: {}", e);
+                        eprintln!("{}", e);
+                        warnings.push(e.into());
                         None
                     }
                     Ok(card_object) => Some((a, card_object.clone())),
@@ -227,6 +239,7 @@ where
         )
         .into(),
     );
+    ui_handle.set_errors("Errors:\n".into());
     ui_handle.set_answer("tries to read 'list.txt'".into());
 
     ui.on_do_the_thing(move || {
