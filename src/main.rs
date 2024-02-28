@@ -20,7 +20,7 @@ slint::slint! {
         out property <string> draw;
         in property <string> answer;
         in property <string> info;
-        in-out property <string> errors;
+        in property <string> errors;
         callback do_the_thing();
         VerticalLayout {
             spacing: 5px;
@@ -126,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(Duration::from_secs(TIMEOUT))
         .build()?;
 
-    let list = read_file()?;
+    let list = read_decklist()?;
 
     let responses = stream::iter(list)
         .map(|(amount, query)| {
@@ -138,9 +138,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut warnings = vec!["warnings:".to_string()];
 
     let search_results: Vec<(u32, SearchResult)> = responses
-        .map(|r| {
-            let temp = r.unwrap();
-            (temp.0, temp.1.card_or())
+        .map(|item| {
+            let resolved = item.unwrap();
+            (resolved.0, resolved.1.card_or())
         })
         .collect::<Vec<(u32, SearchResult)>>()
         .await;
@@ -205,7 +205,9 @@ fn recommended_lands(
         - 0.28 * (ramp + draw) as f64
 }
 
-fn recommended_lands_static_cards<'a>(list: Vec<(u32, CardObject)>) -> impl Fn(u32, u32, u32, u32) -> f64 + 'a {
+fn recommended_lands_static_cards<'a>(
+    list: Vec<(u32, CardObject)>,
+) -> impl Fn(u32, u32, u32, u32) -> f64 + 'a {
     move |total_cards: u32, ramp: u32, draw: u32, cmdr_cmp: u32| {
         recommended_lands(total_cards, &list, ramp, draw, cmdr_cmp)
     }
@@ -257,7 +259,7 @@ where
     Ok(())
 }
 
-fn read_file() -> io::Result<Vec<(u32, String)>> {
+fn read_decklist() -> io::Result<Vec<(u32, String)>> {
     let file = read_to_string(FILE)?;
     let lines: Vec<String> = file
         .split(|c| c == '\n' || c == '\r')

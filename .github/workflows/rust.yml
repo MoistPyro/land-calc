@@ -2,32 +2,73 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build-ubuntu:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
 
   build-windows:
-
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+
+  msrv:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        msrv: [1.56.1] # 2021 edition starts here
+    name: ubuntu / ${{ matrix.msrv }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install ${{ matrix.toolchain }}
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.msrv }}
+          default: true
+      - name: cargo +${{ matrix.msrv }} actions/checkout
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+  update:
+    runs-on: ubuntu-latest
+    name: ubuntu / beta / updated
+    # There's no point running this if no Cargo.lock was checked in in the
+    # first place, since we'd just redo what happened in the regular test job.
+    # Unfortunately, hashFiles only works in if on steps, so we reepeat it.
+    # if: hashFiles('Cargo.lock') != ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install beta
+        if: hashFiles('Cargo.lock') != ''
+        uses: dtolnay/rust-toolchain@beta
+      - name: cargo update
+        if: hashFiles('Cargo.lock') != ''
+        run: cargo update
+      - name: cargo test
+        if: hashFiles('Cargo.lock') != ''
+        run: cargo test --locked --all-features --all-targets
+        env:
+          RUSTFLAGS: -D deprecated
