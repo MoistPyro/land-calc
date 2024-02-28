@@ -37,19 +37,16 @@ jobs:
         msrv: [1.56.1] # 2021 edition starts here
     name: ubuntu / ${{ matrix.msrv }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install ${{ matrix.toolchain }}
-        uses: actions-rs/toolchain@v1
+      - name: Install ${{ matrix.msrv }}
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.msrv }}
-          default: true
-      - name: cargo +${{ matrix.msrv }} actions/checkout
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - name: cargo +${{ matrix.msrv }} check
+        run: cargo check
+
   update:
     runs-on: ubuntu-latest
     name: ubuntu / beta / updated
