@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        msrv: [1.63.0]
+        msrv: [1.65.0]
     name: ubuntu / ${{ matrix.msrv }}
     steps:
       - uses: actions/checkout@v4
@@ -67,5 +67,10 @@ jobs:
       - name: cargo test
         if: hashFiles('Cargo.lock') != ''
         run: cargo test --locked --all-features --all-targets
+        env:
+          RUSTFLAGS: -D deprecated
+      - name: cargo check
+        if: hashFiles('Cargo.lock') != ''
+        run: cargo check --locked --all-features --all-targets
         env:
           RUSTFLAGS: -D deprecated
