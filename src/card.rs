@@ -13,6 +13,7 @@ mod tests {
         let json_str: String = read_to_string("test.json").unwrap();
         let parsed_json: ResponseList = serde_json::from_str(&json_str).unwrap();
         let test_result: String = serde_json::to_string(&parsed_json).unwrap();
+
         assert_eq!(json_str, test_result);
     }
 
@@ -20,12 +21,11 @@ mod tests {
     fn test_tasigur_colour() {
         let json_str: String = read_to_string("test.json").unwrap();
         let response: ResponseList = serde_json::from_str(&json_str).unwrap();
-        let search_result = response.card_or();
+        let search_result = response.card_or("".to_string());
         let tasigur = search_result.get_card_ref().unwrap();
-        let tas_colours = &tasigur.colors;
-        let tas_identity = &tasigur.color_identity;
-        assert!(tas_colours.0 == 0b00000100);
-        assert!(tas_identity.0 == 0b00001101);
+
+        assert!(tasigur.get_colours().0 == 0b00000100);
+        assert!(tasigur.get_identity().0 == 0b00001101);
     }
 }
 
@@ -184,6 +184,14 @@ impl CardObject {
 
         has_colour || has_mana_cost || front_side_has_colour || back_side_has_colour
     }
+
+    pub fn get_colours<'a>(&'a self) -> &'a Colours {
+        return &self.colors;
+    }
+
+    pub fn get_identity<'a>(&'a self) -> &'a Colours {
+        return &self.color_identity;
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
@@ -217,12 +225,13 @@ impl Serialize for Colours {
         let mut temp_vec: Vec<char> = vec![];
         let names = ['G', 'R', 'B', 'U', 'W'];
         for (i, c) in names.iter().enumerate() {
-            if self.0 & (1 << i) > 0 {
+            if self.0.rotate_right(i as u32) & 0b00000001 == 0b00000001 {
                 length += 1;
                 temp_vec.push(*c);
             }
         }
         let mut seq = serializer.serialize_seq(Some(length))?;
+        assert!(temp_vec.len() > 0);
 
         for e in temp_vec {
             seq.serialize_element(&e)?;
@@ -338,34 +347,34 @@ pub struct ResponseList {
 }
 
 impl ResponseList {
-    pub fn card_or<'a>(&'a self) -> SearchResult {
+    pub fn card_or<'a>(&'a self, query: String) -> SearchResult {
         let c = self.data.first();
 
         if let Some(card_object) = c {
             if self.total_cards > 1 {
-                return SearchResult::MultipleHits(self.total_cards, card_object.clone());
+                return SearchResult::MultipleHits(query, self.total_cards, card_object.clone());
             };
 
             return SearchResult::OneHit(card_object.clone());
         };
 
-        return SearchResult::NoHits;
+        return SearchResult::NoHits(query);
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum SearchResult {
-    MultipleHits(u32, CardObject),
+    MultipleHits(String, u32, CardObject),
     OneHit(CardObject),
-    NoHits,
+    NoHits(String),
 }
 
 impl SearchResult {
     fn get_card_ref<'a>(&'a self) -> Option<&'a CardObject> {
         match self {
-            Self::MultipleHits(_, card) => Some(card),
+            Self::MultipleHits(_, _, card) => Some(card),
             Self::OneHit(card) => Some(card),
-            Self::NoHits => None,
+            Self::NoHits(_) => None,
         }
     }
 }

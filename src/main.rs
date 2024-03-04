@@ -1,13 +1,10 @@
-use card::{CardObject, ResponseList, SearchResult};
-use futures::{stream, StreamExt};
-use reqwest::{
-    header::{HeaderMap, HeaderValue},
-    Client, Response,
-};
+use card::{CardObject, SearchResult};
+use search::get_from_scryfall;
 use slint::SharedString;
-use std::{fs::read_to_string, io, time::Duration};
+use std::{fs::read_to_string, io};
 
 mod card;
+mod search;
 
 slint::slint! {
     import { CheckBox , Button, GroupBox, LineEdit} from "std-widgets.slint";
@@ -28,15 +25,15 @@ slint::slint! {
 
             Text {
                 font-size: 14px;
+                color: red;
                 horizontal-alignment: center;
-                text: info;
+                text: errors;
             }
 
             Text {
                 font-size: 14px;
-                color: red;
                 horizontal-alignment: center;
-                text: errors;
+                text: info;
             }
 
             GroupBox {
@@ -108,59 +105,33 @@ slint::slint! {
 }
 
 const FILE: &str = "list.txt";
-const CONCURRENT_REQUESTS: usize = 1;
-const TIMEOUT: u64 = 3;
-const SCRYFALL_URL: &str = "https://api.scryfall.com/cards/search";
-const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-const CONNECTION: &str = "keep-alive";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut headers = HeaderMap::new();
-    headers.insert("User-Agent", HeaderValue::from_static(APP_USER_AGENT));
-    headers.insert("Connection", HeaderValue::from_static(CONNECTION));
-
-    let https_client = Client::builder()
-        .default_headers(headers)
-        .https_only(true)
-        .timeout(Duration::from_secs(TIMEOUT))
-        .build()?;
-
-    let list = read_decklist()?;
-
-    let responses = stream::iter(list)
-        .map(|(amount, query)| {
-            let client = &https_client;
-            async move { scryfall_search(amount, client, query).await }
-        })
-        .buffer_unordered(CONCURRENT_REQUESTS);
+async fn main() -> Result<(), reqwest::Error> {
+    let list = read_decklist().expect("no file called 'list.txt' found");
 
     let mut warnings = vec!["warnings:".to_string()];
 
-    let search_results: Vec<(u32, SearchResult)> = responses
-        .map(|item| {
-            let resolved = item.unwrap();
-            (resolved.0, resolved.1.card_or())
-        })
-        .collect::<Vec<(u32, SearchResult)>>()
-        .await;
+    let search_results: Vec<(u32, SearchResult)> = get_from_scryfall(list).await?;
 
     let cards: Vec<(u32, CardObject)> = search_results
         .iter()
         .filter_map(|(amount, search_result)| match search_result {
-            SearchResult::MultipleHits(_, c) => Some((*amount, c.clone())),
+            SearchResult::MultipleHits(_, _, c) => Some((*amount, c.clone())),
             SearchResult::OneHit(c) => Some((*amount, c.clone())),
-            SearchResult::NoHits => None,
+            SearchResult::NoHits(_) => None,
         })
         .collect();
 
-    //TODO: make errors less opaque
     let mut errors: Vec<String> = search_results
         .iter()
         .filter_map(|(_, search_result)| match search_result {
-            SearchResult::MultipleHits(i, _) => Some(format!("found {} cards", i)),
+            SearchResult::MultipleHits(q, i, card) => Some(format!(
+                "{} hits for {}, using the first one: {}",
+                i, q, card.name
+            )),
             SearchResult::OneHit(_) => None,
-            SearchResult::NoHits => Some("No card with that name found".to_string()),
+            SearchResult::NoHits(q) => Some(format!("No card with name {} found", q)),
         })
         .collect();
 
@@ -170,22 +141,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let number_of_spells: usize = cards.iter().filter(|(_, c)| c.is_nonland()).count();
     let lands_func = recommended_lands_static_cards(cards);
 
-    run_app(lands_func, number_of_spells, warning_display)?;
+    run_app(lands_func, number_of_spells, warning_display).expect("slint did not initialize");
     Ok(())
-}
-
-async fn scryfall_search(
-    amount: u32,
-    client: &Client,
-    query: String,
-) -> Result<(u32, ResponseList), reqwest::Error> {
-    let response: Response = client
-        .get(SCRYFALL_URL)
-        .query(&[("q", &query)])
-        .send()
-        .await?;
-
-    return Ok((amount, response.json::<ResponseList>().await?));
 }
 
 fn recommended_lands(
@@ -221,7 +178,11 @@ fn parse_shared_string_u32(s: SharedString) -> u32 {
     }
 }
 
-fn run_app<F>(f: F, spells: usize, errors: String) -> Result<(), slint::PlatformError>
+fn run_app<F>(
+    land_finder_function: F,
+    spells: usize,
+    errors: String,
+) -> Result<(), slint::PlatformError>
 where
     F: Fn(u32, u32, u32, u32) -> f64 + 'static,
 {
@@ -248,7 +209,7 @@ where
         let draw = parse_shared_string_u32(ui_handle.get_draw());
         let cmdr_cmp = if commander && companion { 2 } else { 0 };
 
-        let recommended_lands = f(total_cards, ramp, draw, cmdr_cmp);
+        let recommended_lands = land_finder_function(total_cards, ramp, draw, cmdr_cmp);
 
         let answer_str: String = format!("play {} lands", recommended_lands);
         ui_handle.set_answer(answer_str.into());
