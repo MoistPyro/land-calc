@@ -9,7 +9,8 @@ use std::time::Duration;
 const CONCURRENT_REQUESTS: usize = 9;
 const TIMEOUT: u64 = 3;
 const SCRYFALL_URL: &str = "https://api.scryfall.com/cards/search";
-const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+pub(crate) const APP_USER_AGENT: &str =
+    concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 const CONNECTION: &str = "keep-alive";
 
 pub async fn get_from_scryfall(

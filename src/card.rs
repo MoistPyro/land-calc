@@ -185,17 +185,19 @@ impl CardObject {
         has_colour || has_mana_cost || front_side_has_colour || back_side_has_colour
     }
 
+    #[allow(dead_code)]
     pub fn get_colours<'a>(&'a self) -> &'a Colours {
         return &self.colors;
     }
 
+    #[allow(dead_code)]
     pub fn get_identity<'a>(&'a self) -> &'a Colours {
         return &self.color_identity;
     }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
-pub struct URI(String);
+pub struct URI(pub String);
 
 #[derive(Debug, PartialEq, PartialOrd, Default, Clone)]
 ///000WUBRG
@@ -370,6 +372,7 @@ pub enum SearchResult {
 }
 
 impl SearchResult {
+    #[allow(dead_code)]
     fn get_card_ref<'a>(&'a self) -> Option<&'a CardObject> {
         match self {
             Self::MultipleHits(_, _, card) => Some(card),

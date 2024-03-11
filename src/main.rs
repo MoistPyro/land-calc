@@ -1,8 +1,11 @@
+use bulk_files::get_bulk_from_scryfall;
 use card::{CardObject, SearchResult};
 use search::get_from_scryfall;
+
 use slint::SharedString;
 use std::{fs::read_to_string, io};
 
+mod bulk_files;
 mod card;
 mod search;
 
@@ -109,6 +112,9 @@ const FILE: &str = "list.txt";
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let list = read_decklist().expect("no file called 'list.txt' found");
+
+    // let _temp = get_bulk_from_scryfall().await?;
+    // Ok(())
 
     let mut warnings = vec!["warnings:".to_string()];
 
