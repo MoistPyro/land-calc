@@ -8,3 +8,4 @@
 5. make use of bulk data files to cut out / lessen need for internet (might not be worth)
 6. recognise keywords like delve and convoke, and compensate
 7. use actual mana cost to figure out minimum number of each colour source
+8. fix bugs with bulk data download
