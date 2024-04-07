@@ -7,10 +7,7 @@ use reqwest::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{
-    card::{CardObject, URI},
-    search::APP_USER_AGENT,
-};
+use crate::{card::CardObject, search::APP_USER_AGENT};
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Clone)]
 pub struct BulkIndex {
@@ -29,7 +26,7 @@ struct BulkItem {
     #[serde(default)]
     id: Uuid,
     #[serde(default)]
-    uri: URI,
+    uri: String, // URI
     #[serde(default)]
     #[serde(rename = "type")]
     data_type: String,
@@ -38,7 +35,7 @@ struct BulkItem {
     #[serde(default)]
     description: String,
     #[serde(default)]
-    download_uri: URI,
+    download_uri: String, // URI
     #[serde(default)]
     updated_at: String,
     #[serde(default)]
@@ -77,7 +74,7 @@ pub async fn get_bulk_from_scryfall() -> Result<Vec<CardObject>, reqwest::Error>
         .next()
         .unwrap();
 
-    let next_url: String = next_item.download_uri.0.to_string();
+    let next_url: String = next_item.download_uri.to_string();
 
     let cards = https_client
         .get(next_url)

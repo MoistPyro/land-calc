@@ -114,7 +114,7 @@ async fn main() -> Result<(), reqwest::Error> {
     let list = read_decklist().expect("no file called 'list.txt' found");
 
     // let _temp = get_bulk_from_scryfall().await?;
-    // Ok(())
+    // return Ok(());
 
     let mut warnings = vec!["warnings:".to_string()];
 

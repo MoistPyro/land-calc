@@ -51,10 +51,10 @@ pub struct CardObject {
     pub layout: String,
     #[serde(default)]
     pub oracle_id: Option<Uuid>, //UUID
-    pub prints_search_uri: URI, //URI
-    pub rulings_uri: URI,       //URI
-    pub scryfall_uri: URI,      //URI
-    pub uri: URI,               //URI
+    pub prints_search_uri: String, //URI
+    pub rulings_uri: String,       //URI
+    pub scryfall_uri: String,      //URI
+    pub uri: String,               //URI
     #[serde(default)]
     pub all_parts: Vec<RelatedCardObject>,
     #[serde(default)]
@@ -121,7 +121,7 @@ pub struct CardObject {
     pub illustration_id: Option<Uuid>, //UUID
     pub image_status: String,
     #[serde(default)]
-    pub image_uris: HashMap<String, URI>,
+    pub image_uris: HashMap<String, String>,
     pub oversized: bool,
     pub prices: HashMap<String, Option<String>>,
     #[serde(default)]
@@ -136,14 +136,14 @@ pub struct CardObject {
     #[serde(default)]
     pub purchase_uris: HashMap<String, String>,
     pub rarity: String,
-    pub related_uris: HashMap<String, URI>,
-    pub released_at: String, //DateTime
+    pub related_uris: HashMap<String, String>, // String, URI
+    pub released_at: String,                   //DateTime
     pub reprint: bool,
-    pub scryfall_set_uri: URI,
+    pub scryfall_set_uri: String, //URI
     pub set_name: String,
-    pub set_search_uri: URI,
+    pub set_search_uri: String, //URI
     pub set_type: String,
-    pub set_uri: URI,
+    pub set_uri: String, //URI
     pub set: String,
     pub set_id: Uuid, //UUID
     pub story_spotlight: bool,
@@ -160,7 +160,7 @@ pub struct CardObject {
     pub previewed_at: Option<String>, //DateTime
     #[serde(rename = "preview.source_uri")]
     #[serde(default)]
-    pub source_uri: Option<URI>,
+    pub source_uri: Option<String>,
     #[serde(rename = "preview.source")]
     #[serde(default)]
     pub source: Option<String>,
@@ -195,9 +195,6 @@ impl CardObject {
         return &self.color_identity;
     }
 }
-
-#[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
-pub struct URI(pub String);
 
 #[derive(Debug, PartialEq, PartialOrd, Default, Clone)]
 ///000WUBRG
@@ -290,7 +287,7 @@ pub struct RelatedCardObject {
     component: String,
     name: String,
     type_line: String,
-    uri: URI,
+    uri: String, // URI
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, PartialEq, Clone)]
@@ -312,7 +309,7 @@ pub struct CardFace {
     #[serde(default)]
     pub illustration_id: Option<Uuid>,
     #[serde(default)]
-    pub image_uris: HashMap<String, URI>,
+    pub image_uris: HashMap<String, String>,
     #[serde(default)]
     pub layout: String,
     #[serde(default)]
