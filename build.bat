@@ -5,3 +5,4 @@ md %~dp0\windows
 copy %~dp0\target\release\land-calc.exe %~dp0\windows\land-calc.exe
 echo 99 mountain (SLD)>%~dp0\windows\list.txt
 copy %~dp0\LICENSE %~dp0\windows\LICENCE
+copy %~dp0\README.md %~dp0\windows\README.md
