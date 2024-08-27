@@ -144,7 +144,12 @@ async fn main() -> Result<(), reqwest::Error> {
     warnings.append(&mut errors);
     let warning_display: String = warnings.join("\n");
 
-    let number_of_spells: usize = cards.iter().filter(|(_, c)| c.is_nonland()).count();
+    let number_of_spells: u32 = cards
+        .iter()
+        .filter(|(_, c)| c.is_nonland())
+        .map(|(a, _)| *a)
+        .reduce(|acc, e| acc + e)
+        .unwrap();
     let lands_func = recommended_lands_static_cards(cards);
 
     run_app(lands_func, number_of_spells, warning_display).expect("slint did not initialize");
@@ -168,9 +173,8 @@ fn recommended_lands(
         - 0.28 * (ramp + draw) as f64
 }
 
-fn recommended_lands_static_cards<'a>(
-    list: Vec<(u32, CardObject)>,
-) -> impl Fn(u32, u32, u32, u32) -> f64 + 'a {
+///curry the list of cards with the recommended_lands function, as this is not used in run_app otherwise
+fn recommended_lands_static_cards<'a>( list: Vec<(u32, CardObject)>, ) -> impl Fn(u32, u32, u32, u32) -> f64 + 'a {
     move |total_cards: u32, ramp: u32, draw: u32, cmdr_cmp: u32| {
         recommended_lands(total_cards, &list, ramp, draw, cmdr_cmp)
     }
@@ -186,7 +190,7 @@ fn parse_shared_string_u32(s: SharedString) -> u32 {
 
 fn run_app<F>(
     land_finder_function: F,
-    spells: usize,
+    spells: u32,
     errors: String,
 ) -> Result<(), slint::PlatformError>
 where
